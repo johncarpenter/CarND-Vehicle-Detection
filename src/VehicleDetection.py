@@ -10,6 +10,7 @@ from sklearn.preprocessing import StandardScaler
 from skimage.feature import hog
 from sklearn.model_selection import train_test_split
 from scipy.ndimage.measurements import label
+import sys
 
 from utils import *
 from Config import Config
@@ -103,9 +104,18 @@ class VehicleDetection:
         if(self.has_trained == False):
             sys.exit("Config or training file not provided. Exiting")
 
+        # if you extracted training
+        # data from .png images (scaled 0 to 1 by mpimg) and the
+        # image you are searching is a .jpg (scaled 0 to 255)
+        if(img.max() > 1):
+            img = img.astype(np.float32)/255
+
+
         image_features = self.__single_image_features(img)
 
         x_start_stop = [None,None]
+        x_start_stop[0] = 400
+        x_start_stop[1] = img.shape[1]
 
         y_start_stop = [None,None]
         y_start_stop[0] = int(img.shape[0]/2)
@@ -113,13 +123,13 @@ class VehicleDetection:
 
         hot_windows = []
 
-        hot_windows += self.__search(img,SearchConfig(y_start_stop=y_start_stop, xy_window=(72,72),xy_overlap=(0.75,0.75)))
+        hot_windows += self.__search(img,SearchConfig(y_start_stop=y_start_stop, xy_window=(80,80),xy_overlap=(0.75,0.75)))
         hot_windows += self.__search(img,SearchConfig(y_start_stop=y_start_stop, xy_window=(128,128),xy_overlap=(0.75,0.75)))
-        hot_windows += self.__search(img,SearchConfig(y_start_stop=y_start_stop, xy_window=(184,184),xy_overlap=(0.75,0.75)))
-        #hot_windows += self.__search(img,SearchConfig(y_start_stop=y_start_stop, xy_window=(220,220),xy_overlap=(0.75,0.75)))
+        #hot_windows += self.__search(img,SearchConfig(y_start_stop=y_start_stop, xy_window=(184,184),xy_overlap=(0.75,0.75)))
+        hot_windows += self.__search(img,SearchConfig(y_start_stop=y_start_stop, xy_window=(220,220),xy_overlap=(0.75,0.75)))
 
         #window_img = draw_boxes(img, hot_windows, color=(0, 0, 255), thick=6)
-        heatmap = filter_by_heatmap(img, hot_windows,thresh=3)
+        heatmap = filter_by_heatmap(img, hot_windows,thresh=9)
         labels = label(heatmap)
 
         draw_img = draw_labeled_bboxes(img, labels)
@@ -145,7 +155,7 @@ class VehicleDetection:
             img_features.append(spatial_features)
         #5) Compute histogram features if flag is set
         if self.config.hist_feat == True:
-            hist_features = color_hist(feature_image, nbins=self.config.hist_bins)
+            hist_features = color_hist(feature_image, nbins=self.config.hist_bins, bins_range=(0,1))
             #6) Append features to list
             img_features.append(hist_features)
         #7) Compute HOG features if flag is set

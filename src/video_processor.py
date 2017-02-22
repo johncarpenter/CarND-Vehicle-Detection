@@ -3,13 +3,14 @@ import os
 import cv2
 from moviepy.editor import VideoFileClip
 import numpy as np
+import sys
 
 from VehicleDetection import VehicleDetection
 
 def process_video(infile,outfile, camera, vehicle):
     print("Reading {}".format(os.path.basename(infile)))
 
-    vehicle_detection = VehicleDetection()
+    vehicle_detection = VehicleDetection(from_pickle=vehicle)
 
     clip = VideoFileClip(infile)
     # Vehicle Detection
