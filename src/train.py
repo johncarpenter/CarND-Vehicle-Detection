@@ -11,8 +11,18 @@ import matplotlib.gridspec as gridspec
 
 from Config import Config
 from VehicleDetection import VehicleDetection
-
+'''
+This program is designed to take in a series of images classified as either
+cars or not-cars and create a LinearSVC classifier from it. Outputs a pickle
+file (vehicle_detection.p) that is used in the image and video processors
+'''
 def train(cars,notcars):
+    '''
+    Runs the training algorithm on a series of images for the LinearSVC classifier
+    Parameters:
+    cars Listing of images as files as png or jpg for processing
+    notcars Listing of images as files for the "not cars" parameterization
+    '''
     print("Training...");
     vehicle_detection = VehicleDetection(config=Config())
     vehicle_detection.train(cars,notcars)
@@ -20,12 +30,26 @@ def train(cars,notcars):
     test_sample(vehicle_detection)
 
 def test_sample(vehicle_detection):
+    '''
+    Takes the model and runs the detection on 6 test images.
+
+    Parameters:
+    vehicle_detection VehicleDetection class
+
+    Output Plot with the test images rendered
+    '''
     test_images = glob.glob('../test_images/*.jpg')
     images = []
     for img_name in test_images:
         raw_image = mpimg.imread(img_name)
         out_img = vehicle_detection.process_image(raw_image)
-        images.append((out_img,img_name,'brg'))
+
+        # Because sequential images create a historical helpers, we have to
+        # delete the historical records after each image
+        vehicle_detection.prev_hot_windows = []
+        vehicle_detection.tracked_cars = []
+
+        images.append((out_img,img_name))
 
     render_results(images)
 
@@ -41,7 +65,7 @@ def render_results(images, images_per_row = 3,output = False):
         for ndx,pair in enumerate(images):
             ax = fig.add_subplot(gs[ndx])
             ax.set_title("{}".format(pair[1]))
-            ax.imshow(pair[0],cmap=pair[2])
+            ax.imshow(pair[0])
 
         if(output):
             plt.savefig(output, dpi=300)
@@ -56,7 +80,9 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    #redirect logs to file
+    '''
+    All output is redirected to training.log file. @TODO parameterize this
+    '''
     old_stdout = sys.stdout
 
     log_file = open("training.log","w")

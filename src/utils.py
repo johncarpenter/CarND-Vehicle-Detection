@@ -2,6 +2,12 @@ from skimage.feature import hog
 import matplotlib.image as mpimg
 import numpy as np
 import cv2
+'''
+Series of utility classes taken from Udacity course materials to simplify computations
+and rendering
+
+@TODO classes are mostly verbatim and not optimized for this codebase
+'''
 
 def convert_image(img, color_space='RGB'):
     if color_space != 'RGB':
@@ -72,6 +78,10 @@ def extract_features(imgs, color_space='RGB', spatial_size=(32, 32),
         file_features = []
         # Read in each one by one
         image = mpimg.imread(file)
+
+        if image.dtype != np.uint8:
+            image = (255*image).astype(np.uint8)
+
         # apply color conversion if other than 'RGB'
         feature_image = convert_image(image, color_space=color_space)
 
@@ -80,7 +90,7 @@ def extract_features(imgs, color_space='RGB', spatial_size=(32, 32),
             file_features.append(spatial_features)
         if hist_feat == True:
             # Apply color_hist()
-            hist_features = color_hist(feature_image, nbins=hist_bins, bins_range=(0,1))
+            hist_features = color_hist(feature_image, nbins=hist_bins, bins_range=(0,256))
             file_features.append(hist_features)
         if hog_feat == True:
         # Call get_hog_features() with vis=False, feature_vec=True
@@ -125,7 +135,7 @@ def slide_window(img, x_start_stop=[None, None], y_start_stop=[None, None],
     nx_buffer = np.int(xy_window[0]*(xy_overlap[0]))
     ny_buffer = np.int(xy_window[1]*(xy_overlap[1]))
     nx_windows = np.int((xspan-nx_buffer)/nx_pix_per_step)
-    ny_windows = np.int((yspan-nx_buffer)/ny_pix_per_step)
+    ny_windows = np.int((yspan-ny_buffer)/ny_pix_per_step)
     # Initialize a list to append window positions to
     window_list = []
     # Loop through finding x and y window positions
@@ -168,7 +178,7 @@ def filter_by_heatmap(img, hot_windows, thresh=1):
     return heatmap
 
 
-def draw_labeled_bboxes(img, labels, color=(0, 0, 255), thick=6):
+def draw_labeled_bboxes(img, labels, color=(255, 0, 0), thick=6):
     # Iterate through all detected cars
     for car_number in range(1, labels[1]+1):
         # Find pixels with each car_number label value

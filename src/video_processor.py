@@ -6,17 +6,59 @@ import numpy as np
 import sys
 
 from VehicleDetection import VehicleDetection
+from LaneDetector import LaneDetector
 
-def process_video(infile,outfile, camera, vehicle):
+class MultipleDetector:
+    '''
+    Class to handle lane and vehicle detector processors.
+
+    @TODO should be expanded to be more generic and detectors classes abstracted
+    '''
+    def __init__(self, lane_detector=None, vehicle_detection=None):
+        '''
+        Parameters:
+        lane_detector Detector class
+        vehicle_detection VehicleDetection class
+        '''
+        self.lane_detector = lane_detector
+        self.vehicle_detector = vehicle_detection
+
+    def process_image(self,img):
+        '''
+        Process individual image or image from video stream
+
+        Parameters:
+        img PIL format image
+        '''
+        if self.lane_detector:
+            img = self.lane_detector.process_image(img)
+
+        if self.vehicle_detector:
+            img = self.vehicle_detector.process_image(img)
+        return img
+
+def process_video(infile,outfile, camera=None, vehicle=None):
+    '''
+    Load video, process individual image frames, output frames to new Video
+    Parameters:
+    infile Filename of input video
+    outfile Filename of output video
+    camera Filename of Camera Calibration pickle (from calibration.py)
+    vehicle Filename of Vehicle Model pickle (from train.py)
+    '''
     print("Reading {}".format(os.path.basename(infile)))
 
     vehicle_detection = VehicleDetection(from_pickle=vehicle)
 
-    clip = VideoFileClip(infile)
-    # Vehicle Detection
-    adj_clip = clip.fl_image(vehicle_detection.process_image)
+    lane_detector = LaneDetector(use_smoothing = True, camera = camera)
 
+    multiple_detector = MultipleDetector(lane_detector=lane_detector, vehicle_detection=vehicle_detection)
+
+    clip = VideoFileClip(infile)
+
+    adj_clip = clip.fl_image(multiple_detector.process_image)
     adj_clip.write_videofile(outfile, audio=False)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Vehicle Detection and Lane Finding')

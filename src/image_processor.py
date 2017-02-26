@@ -3,11 +3,17 @@ import os
 import cv2
 from moviepy.editor import VideoFileClip
 import matplotlib.pyplot as plt
-
+import matplotlib.image as mpimg
 
 from VehicleDetection import VehicleDetection
 
 def process_image(infile,outfile,vehicle):
+    '''
+    Processes a single image for the vehicle detections
+    infile Filename of input video
+    outfile Filename of output video (optional)
+    vehicle Filename of Vehicle Model pickle (from train.py)
+    '''
     print("Processing {}".format(infile))
     vehicle_detection = VehicleDetection(from_pickle=vehicle)
 
