@@ -26,15 +26,44 @@ The goals / steps of this project are the following:
 
 ###Histogram of Oriented Gradients (HOG) Feature Extraction and SVM Classifier###
 
-The first step in the project is to create a classifier model to be able to identify vehicles within an image. To do this we convert training images into a set of features and then created a classifier to identify whether an object is a "car" or "not a car". Using images provided ( [vehicle](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/vehicles.zip) and [non-vehicle](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/non-vehicles.zip) ) we created a feature set with HOG, spatial and color features appended together.
+The first step in the project is to create a classifier model to be able to identify vehicles within an image. To do this we convert training images into a list of features. We then created a classifier to identify whether an object is a "car" or "not a car" using the feature sets. The images provided ( [vehicle](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/vehicles.zip) and [non-vehicle](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/non-vehicles.zip) ) were provided as part of the course materials
 
 ####Training images####
-[![Car training image](output_images/training_car_sample.jpg)]
-[![Not Car training image](output_images/training_non_car_sample.jpg)]
+Provided are two sample images from the training set
+[Car training image](output_images/training_car_sample.jpg)
+[Not Car training image](output_images/training_non_car_sample.jpg)
 
+After a number of iterations we arrived at a feature set that was made up of *HOG features + Spatial Binning + Color Histogram* Below is a section from the ```training.log``` file that was used in the model generation
+```
+Color Space HLS
+Spatial Bin Size (16, 16)
+Histogram Bins 16
+Orientations 9
+Px per Cell 16
+Cell per Block 2
+HOG Channel ALL
+Use Spatial Features True
+Use Histogram Features True
+Use HOG Features True
+Feature vector length: 1788
+```
 
+In order to choose the parameters the ```train.py``` program was run a number of times. This program trained the model and tested it on a series of 6 images for testing. The output of the program gave both the training parameters in the ```training.log``` file and a visual representation of the vehicle identification. This gave two measures to verify the classifier would be suitable for our video
 
+```
+usage: train.py [-h] cars notcars
 
+Vehicle Detection Training Program
+
+positional arguments:
+  cars        Cars image directory
+  notcars     Not cars image directory
+
+optional arguments:
+  -h, --help  show this help message and exit
+  ```
+In training the classifier, we separated 20% of the data for testing purposes. This gave a small measure for the
+accuracy for the ```LinearSVC``` classifier. Below is the output from the training using the configuration parameters from above;
 
 ```
 training.log
@@ -58,6 +87,22 @@ Feature vector length: 1788
 Test Accuracy of SVC =  0.9907
 Training finished
 ```
+Once the model was validated it was saved to ```vehicle_detection.p``` pickle file along with the configuration.
+
+###Searching the Image###
+
+Once the classifier was completed, the next step was to search the image for potential matches from the classifier. This was accomplished by creating sliding a test window across the image. Different window scales were required to handle different sized vehicles in the image. And so we repeated the search with a variety of window sizes.
+
+![Sliding Windows](output_images/training_car_sample.jpg)
+Shows the windows that were used within the image
+
+The sliding windows proved to be the largest performance drain on the application so the processes to choosing the number of sliding windows was based on trying to minimize the search to as few windows as possible. The following steps were taken;
+1. Minimize the search to just the area on the road. As seen in the image above
+2. Maintain a historical record of the previous N iterations and use that to supplement the search in the current windows
+3. Keep the number of different sizes to a minimum (2)
+
+
+
 
 
 
