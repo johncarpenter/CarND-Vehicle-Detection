@@ -1,1 +1,9 @@
-Please save your output images to this folder and include a description in your README of what each image shows.
+
+project.mp4 - Completed Project Video
+project_with_ll.mp4 - Completed Project Video with Lane markers
+search_windows.png - Image showing the extent of the search windows
+test.gif - Gif showing effect of post-processing
+training_car_sample.jpg - Sample of input data for cars
+training_non_car_sample.jpg - Sample of input data for non-cars
+window_test.jpg - Test images with search hits overlaid
+windows_test_1.jpg - Detailed image with search hits overlaid

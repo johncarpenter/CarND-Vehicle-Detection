@@ -4,7 +4,7 @@
 
 ###Summary###
 
-In this project we are attempting to detect other vehicles within a driving video stream. The vehicles are Identified through a combination of feature extraction and linear classifiers. It is designed to cover the basics of those algorithms so it's performance is not optimized at this time.
+In this project we are attempting to detect other vehicles within a driving video stream. The vehicles are Identified through a combination of feature extraction and linear classifiers. It is designed to cover the basics of those algorithms.
 
 ####Video Results####
 
@@ -116,6 +116,7 @@ Once the model was validated it was saved to ```vehicle_detection.p``` pickle fi
 Once the classifier was completed, the next step was to search the image for potential matches from the classifier. This was accomplished by creating sliding a test window across the image. Different window scales were required to handle different sized vehicles in the image. And so we repeated the search with a variety of window sizes.
 
 ![Sliding Windows](output_images/search_windows.png)
+
 Shows the windows that were used within the image
 
 The sliding windows proved to be the largest performance drain on the application so the processes to choosing the number of sliding windows was based on trying to minimize the search to as few windows as possible. The following steps were taken;
@@ -136,7 +137,7 @@ hot_windows += self.__search(img,SearchConfig(x_start_stop=x_start_stop,y_start_
 
 As each sliding window registered a hit with the classifier, it was added into a list of successes. Those list of successes were overlaid onto a heatmap. Those pixel values that exceeded a threshold were considered a successful vehicle detection. Test images are shown below;
 
-![Window Results](output_images/windows_test.jpg)
+![Window Results](output_images/window_test.jpg)
 
 *Note:The images above show a high amount of false-positive results. The decision was made to handle these post-processing. Testing with the thresholds and window sizes showed we could remove the false-positives but that occasionally failed to track vehicles. It was more important to register false-positives than miss identify vehicles. Post-processing doesn't operate in single image mode*
 
@@ -172,7 +173,7 @@ You can see the effect of the processing in this image. Blue boxes are the origi
 
 ###Discussions####
 
-The project was successfully able to track the vehicles within the provided video and test images using the algorithms mentioned above. There were a couple of false-positives, the video
+The project was successfully able to track the vehicles within the provided video and test images using the algorithms mentioned above. There were a couple of false-positives but with processing we were able to minimize their impact. There are many post-processing techniques that could improve both the speed and accuracy of the algorithm but the basics of the LinearSVC and heatmap function well enough for vehicle identification
 
 ####Potential Issues####
 
@@ -186,7 +187,7 @@ The project was successfully able to track the vehicles within the provided vide
 
 The vehicle detection algorithm still lags behind being able to operate in real-time. Based on 2.7 GHz Intel Core i5 8GB Macbook, the algorithm could only maintain a 1.04 seconds / frame (s/it) processing time. About 20 times slower than required. A couple of solutions may be able to solve this;
 
-1. Reduce the sampling rate. This had a direct improvement on the processing speed although it was not able to register vehicle changes very quickly. Even a change of every 2nd/3rd frame showed a linear improvement in speed. Adding vehicle dynamics and predictions would improve this.
+1. Reduce the sampling rate. This had a direct improvement on the processing speed although it was not able to register vehicle changes very quickly. Even a change of every 2nd/3rd frame showed a linear improvement in speed with minimial tracking loss. Adding vehicle dynamics and predictions would improve this.
 
 2. Adaptive window searches. Since we are tracking the vehicles we can focus search in their predicted locations, and minimize the global searches.
 
