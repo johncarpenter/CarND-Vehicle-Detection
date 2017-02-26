@@ -244,27 +244,48 @@ class VehicleDetection:
         return self.__search_windows(img, windows)
 
 
-    def __single_image_features(self,img):
+    def single_image_features(self,img,debug=False):
         '''
         Creates a feature list of for an image. Based on the configuration provided
+        Parameters:
+        debug: Outputs a series of images for visualization
+
         Output:
         List of features
+
         '''
+
+        output_vis = {}
+        if(debug):
+            output_vis['raw'] = img.copy()
+
 
         #1) Define an empty list to receive features
         img_features = []
         #2) Apply color conversion if other than 'RGB'
         feature_image = convert_image(img,color_space=self.config.color_space)
+
+        if(debug):
+            output_vis['color_space'] = feature_image.copy()
+
         #3) Compute spatial features if flag is set
         if self.config.spatial_feat == True:
             spatial_features = bin_spatial(feature_image, size=self.config.spatial_size)
             #4) Append features to list
             img_features.append(spatial_features)
+
+            if(debug):
+                output_vis['spatial_features'] = spatial_features
+
         #5) Compute histogram features if flag is set
         if self.config.hist_feat == True:
             hist_features = color_hist(feature_image, nbins=self.config.hist_bins, bins_range=(0,256))
             #6) Append features to list
             img_features.append(hist_features)
+
+            if(debug):
+                output_vis['hist_features'] = hist_features
+
         #7) Compute HOG features if flag is set
         if self.config.hog_feat == True:
             if self.config.hog_channel == 'ALL':
@@ -279,8 +300,24 @@ class VehicleDetection:
             #8) Append features to list
             img_features.append(hog_features)
 
+            if(debug):
+                hog,image = get_hog_features(feature_image[:,:,0], self.config.orient,
+                            self.config.pix_per_cell, self.config.cell_per_block, vis=True, feature_vec=True)
+                output_vis['hog_0'] = image
+                hog,image = get_hog_features(feature_image[:,:,1], self.config.orient,
+                            self.config.pix_per_cell, self.config.cell_per_block, vis=True, feature_vec=True)
+                output_vis['hog_1'] = image
+                hog,image = get_hog_features(feature_image[:,:,2], self.config.orient,
+                            self.config.pix_per_cell, self.config.cell_per_block, vis=True, feature_vec=True)
+                output_vis['hog_2'] = image
+
+            #8) Append features to list
+
         #9) Return concatenated array of features
-        return np.concatenate(img_features)
+        if(debug):
+            return np.concatenate(img_features), output_vis
+        else:
+            return np.concatenate(img_features)
 
 
     def __search_windows(self,img, windows):
@@ -298,7 +335,7 @@ class VehicleDetection:
             #3) Extract the test window from original image
             test_img = cv2.resize(img[window[0][1]:window[1][1], window[0][0]:window[1][0]], (64, 64))
             #4) Extract features for that window using single_img_features()
-            features = self.__single_image_features(test_img)
+            features = self.single_image_features(test_img)
             #5) Scale extracted features to be fed to classifier
             test_features = self.xscaler.transform(np.array(features).reshape(1, -1))
             #6) Predict using your classifier

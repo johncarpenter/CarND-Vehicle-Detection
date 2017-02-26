@@ -8,6 +8,7 @@ import numpy as np
 import glob
 import math
 import matplotlib.gridspec as gridspec
+import random
 
 from Config import Config
 from VehicleDetection import VehicleDetection
@@ -27,7 +28,29 @@ def train(cars,notcars):
     vehicle_detection = VehicleDetection(config=Config())
     vehicle_detection.train(cars,notcars)
     print("Training finished")
+
+    # Optional visualization
+    '''
+    car_files = glob.glob(notcars+'/**/*.png', recursive=True)
+    test_image = random.choice(car_files)
+    img = mpimg.imread(test_image)
+    feature,vis = vehicle_detection.single_image_features(img,debug=True)
+    visualize_training(vis)
+    '''
+
     test_sample(vehicle_detection)
+
+
+def visualize_training(training_images):
+
+    images = []
+    images.append((training_images['raw'],"Non Car"))
+    images.append((training_images['color_space'],"HLS Conversion",'gist_rainbow_r'))
+
+    images.append((training_images['hog_0'],"HOG 0"))
+    images.append((training_images['hog_1'],"HOG 1"))
+    images.append((training_images['hog_2'],"HOG 2"))
+    render_results(images,output="../output_images/training_non_car_sample.jpg")
 
 def test_sample(vehicle_detection):
     '''
@@ -54,7 +77,7 @@ def test_sample(vehicle_detection):
     render_results(images)
 
 
-def render_results(images, images_per_row = 3,output = False):
+def render_results(images, images_per_row = 2,output = False):
 
         nrow = math.ceil(len(images) / images_per_row)
 
@@ -65,7 +88,9 @@ def render_results(images, images_per_row = 3,output = False):
         for ndx,pair in enumerate(images):
             ax = fig.add_subplot(gs[ndx])
             ax.set_title("{}".format(pair[1]))
-            ax.imshow(pair[0])
+            cmap = 'gray' if len(pair) == 2 else pair[2]
+            print(cmap)
+            ax.imshow(pair[0],cmap=cmap)
 
         if(output):
             plt.savefig(output, dpi=300)

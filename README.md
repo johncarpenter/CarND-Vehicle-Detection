@@ -26,10 +26,10 @@ The goals / steps of this project are the following:
 
 ###Histogram of Oriented Gradients (HOG) Feature Extraction and SVM Classifier###
 
-The first step in the project is to create a classifier model to be able to identify vehicles within an image. To do this we convert training images into a set of features and create a classifier to identify whether an object is a "car" or "not a car". Using images provided ( [vehicle](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/vehicles.zip) and [non-vehicle](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/non-vehicles.zip) ) we created a feature set with HOG, spatial and color features appended together.
+The first step in the project is to create a classifier model to be able to identify vehicles within an image. To do this we convert training images into a set of features and then created a classifier to identify whether an object is a "car" or "not a car". Using images provided ( [vehicle](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/vehicles.zip) and [non-vehicle](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/non-vehicles.zip) ) we created a feature set with HOG, spatial and color features appended together.
 
-#### Training images ####
-
+####Training images####
+[![Training image](./output_images/training_car_sample.jpg)]
 
 
 
