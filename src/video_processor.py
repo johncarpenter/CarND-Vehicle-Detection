@@ -38,7 +38,7 @@ class MultipleDetector:
             img = self.lane_detector.process_image(img)
 
         if self.vehicle_detector:
-            img = self.vehicle_detector.process_image(img, full_search=self.frame_count % 1 == 0)
+            img = self.vehicle_detector.process_image(img, full_search=self.frame_count % 1 == 0) #changing 1 to 2-3 changes the sample rate of the video
         return img
 
 def process_video(infile,outfile, camera=None, vehicle=None):

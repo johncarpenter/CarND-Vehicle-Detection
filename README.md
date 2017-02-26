@@ -12,30 +12,50 @@ In this project we are attempting to detect other vehicles within a driving vide
 
 The above video shows both the lane detection algorithm from [Advanced Lane Detection](https://github.com/johncarpenter/CarND-Vehicle-Detection) project and the VehicleDetection program.
 
+####Using the Program####
+The videos are processed using ```video_processor.py``` file.
+
+```
+usage: video_processor.py [-h] -i INPUT -o OUTPUT [-c CAMERA] [-v VEHICLE]
+
+Vehicle Detection and Lane Finding
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i INPUT, --input INPUT
+                        Input video file
+  -o OUTPUT, --output OUTPUT
+                        Output video file
+  -c CAMERA             Calibration File from calibrate.py (Optional)
+  -v VEHICLE            Vehicle Detection Pickle File
+```
+
 
 ###Analysis and Discovery###
 
 The goals / steps of this project are the following:
 
 1. Perform a Histogram of Oriented Gradients (HOG) feature extraction on a labeled training set of images and train a classifier Linear SVM classifier
-2. Optionally, you can also apply a color transform and append binned color features, as well as histograms of color, to your HOG feature vector.
-3. Note: for those first two steps don't forget to normalize your features and randomize a selection for training and testing.
+2. Apply a color transform and append binned color features, as well as histograms of color, to your HOG feature vector.
+3. Normalize your features and randomize a selection for training and testing.
 4. Implement a sliding-window technique and use your trained classifier to search for vehicles in images.
-5. Run your pipeline on a video stream (start with the test_video.mp4 and later implement on full project_video.mp4) and create a heat map of recurring detections frame by frame to reject outliers and follow detected vehicles.
+5. Run your pipeline on a video stream and create a heat map of recurring detections frame by frame to reject outliers and follow detected vehicles.
 6. Estimate a bounding box for vehicles detected.
 
 ###Histogram of Oriented Gradients (HOG) Feature Extraction and SVM Classifier###
 
-The first step in the project is to create a classifier model to be able to identify vehicles within an image. To do this we convert training images into a list of features. We then created a classifier to identify whether an object is a "car" or "not a car" using the feature sets. The images provided ( [vehicle](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/vehicles.zip) and [non-vehicle](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/non-vehicles.zip) ) were provided as part of the course materials
+The first step in the project is to create a classifier model to be able to identify vehicles within an image. To do this we convert training images into a list of features. We then created a classifier to identify whether an object is a "car" or "not a car" using the feature sets. The training images provided ( [vehicle](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/vehicles.zip) and [non-vehicle](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/non-vehicles.zip) ) were provided as part of the course materials
 
 ####Training images####
-Provided are two sample images from the training set
+Provided are two sample images from the training set, along with the HOG sampling.
 
 [Car training image](output_images/training_car_sample.jpg)
 
 [Not Car training image](output_images/training_non_car_sample.jpg)
 
-After a number of iterations we arrived at a feature set that was made up of *HOG features + Spatial Binning + Color Histogram* Below is a section from the ```training.log``` file that was used in the model generation
+####Configuration####
+
+After a number of iterations we arrived at a feature set that was made up of *HOG features + Spatial Binning + Color Histogram* Below is the configuration from the ```training.log``` file that was used in the model generation
 ```
 Color Space HLS
 Spatial Bin Size (16, 16)
@@ -95,7 +115,7 @@ Once the model was validated it was saved to ```vehicle_detection.p``` pickle fi
 
 Once the classifier was completed, the next step was to search the image for potential matches from the classifier. This was accomplished by creating sliding a test window across the image. Different window scales were required to handle different sized vehicles in the image. And so we repeated the search with a variety of window sizes.
 
-![Sliding Windows](output_images/search_windows.jpg)
+![Sliding Windows](output_images/search_windows.png)
 Shows the windows that were used within the image
 
 The sliding windows proved to be the largest performance drain on the application so the processes to choosing the number of sliding windows was based on trying to minimize the search to as few windows as possible. The following steps were taken;
@@ -106,7 +126,7 @@ The sliding windows proved to be the largest performance drain on the applicatio
 
 We eventually decided on two window sizes (52,52) and (110,110) each with a 50% overlap. This caused a number of false positives which we then used post-processing to remove them.
 
-```python VehicleDetection.py
+```python
 hot_windows += self.__search(img,SearchConfig(x_start_stop=x_start_stop,y_start_stop=y_start_stop, xy_window=(52,52),xy_overlap=(0.5,0.5)))
   hot_windows += self.__search(img,SearchConfig(x_start_stop=x_start_stop,y_start_stop=y_start_stop, xy_window=(110,110),xy_overlap=(0.5,0.5)))
 
