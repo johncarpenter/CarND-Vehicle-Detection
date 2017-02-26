@@ -38,7 +38,7 @@ def train(cars,notcars):
     visualize_training(vis)
     '''
 
-    test_sample(vehicle_detection)
+    #test_sample(vehicle_detection)
 
 
 def visualize_training(training_images):
