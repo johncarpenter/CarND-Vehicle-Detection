@@ -29,6 +29,8 @@ def train(cars,notcars):
     vehicle_detection.train(cars,notcars)
     print("Training finished")
 
+    test_sample(vehicle_detection)
+
     # Optional visualization
     '''
     car_files = glob.glob(notcars+'/**/*.png', recursive=True)
@@ -38,7 +40,6 @@ def train(cars,notcars):
     visualize_training(vis)
     '''
 
-    #test_sample(vehicle_detection)
 
 
 def visualize_training(training_images):
@@ -74,7 +75,7 @@ def test_sample(vehicle_detection):
 
         images.append((out_img,img_name))
 
-    render_results(images)
+    render_results(images, output="../output_images/window_test.jpg")
 
 
 def render_results(images, images_per_row = 2,output = False):

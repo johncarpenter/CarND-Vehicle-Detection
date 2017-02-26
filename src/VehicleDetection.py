@@ -127,7 +127,7 @@ class VehicleDetection:
         pickle.dump( dist_pickle, open( "vehicle_detection.p", "wb" ) )
         self.has_trained = True
 
-    def process_image(self,img):
+    def process_image(self,img, full_search=True):
         '''
         Applies the Vehicle Detection algorithms to a single image. When images
         are passed in sequentially the historical filters are used.
@@ -137,47 +137,49 @@ class VehicleDetection:
         if(self.has_trained == False):
             sys.exit("Config or training file not provided. Exiting")
 
-        # Define the full search area
-        x_start_stop = [None,None]
-        x_start_stop[0] = 400
-        x_start_stop[1] = img.shape[1]
+        if(full_search):
+            # Define the full search area
+            x_start_stop = [None,None]
+            x_start_stop[0] = 400
+            x_start_stop[1] = img.shape[1]
 
-        y_start_stop = [None,None]
-        y_start_stop[0] = int(img.shape[0]/2)
-        y_start_stop[1] = img.shape[0]-80
+            y_start_stop = [None,None]
+            y_start_stop[0] = int(img.shape[0]/2)
+            y_start_stop[1] = img.shape[0]-80
 
-        # Separate out background images
-        #fgmask = self.background_filter.apply(img)
-        #img = cv2.bitwise_and(img,img,mask=fgmask)
+            # Separate out background images
+            #fgmask = self.background_filter.apply(img)
+            #img = cv2.bitwise_and(img,img,mask=fgmask)
 
-        hot_windows = []
+            hot_windows = []
 
-        hot_windows += self.__search(img,SearchConfig(x_start_stop=x_start_stop,y_start_stop=y_start_stop, xy_window=(52,52),xy_overlap=(0.5,0.5)))
-        hot_windows += self.__search(img,SearchConfig(x_start_stop=x_start_stop,y_start_stop=y_start_stop, xy_window=(110,110),xy_overlap=(0.5,0.5)))
-        #hot_windows += self.__search(img,SearchConfig(x_start_stop=x_start_stop,y_start_stop=y_start_stop, xy_window=(110,110),xy_overlap=(0.75,0.75)))
-        #hot_windows += self.__search(img,SearchConfig(x_start_stop=x_start_stop,y_start_stop=y_start_stop, xy_window=(160,160),xy_overlap=(0.75,0.75)))
+            hot_windows += self.__search(img,SearchConfig(x_start_stop=x_start_stop,y_start_stop=y_start_stop, xy_window=(52,52),xy_overlap=(0.5,0.5)))
+            hot_windows += self.__search(img,SearchConfig(x_start_stop=x_start_stop,y_start_stop=y_start_stop, xy_window=(110,110),xy_overlap=(0.5,0.5)))
 
-        # Keep a running record for the last 500ms
-        self.prev_hot_windows.append(hot_windows);
-        if(len(self.prev_hot_windows) >= 12):
-            self.prev_hot_windows.pop(0)
+            # Keep a running record for the last 500ms
+            self.prev_hot_windows.append(hot_windows);
+            if(len(self.prev_hot_windows) >= 12):
+                self.prev_hot_windows.pop(0)
 
-        # Append all the information from the last 12 frames into one estimator
-        hot_windows = []
-        for hw in self.prev_hot_windows:
-            hot_windows += hw
+            # Append all the information from the last 12 frames into one estimator
+            hot_windows = []
+            for hw in self.prev_hot_windows:
+                hot_windows += hw
 
-        # Debug - Draw search windows
-        #window_img = draw_boxes(img, hot_windows, color=(0, 0, 255), thick=2)
+            # Debug - Draw search windows
+            window_img = draw_boxes(img, hot_windows, color=(0, 0, 255), thick=2)
 
-        #Create heatmap style image from overlaid windows.
-        thresh = int(len(self.prev_hot_windows)*0.75)  #Threshold is based upon size of historical data
-        heatmap = filter_by_heatmap(img, hot_windows,thresh=thresh)
+            #Create heatmap style image from overlaid windows.
+            #thresh = int(len(self.prev_hot_windows)*0.75)  #Threshold is based upon size of historical data
+            heatmap = filter_by_heatmap(img, hot_windows,thresh=12)
 
-        labels = label(heatmap)
+            labels = label(heatmap)
 
-        # Itearate through labels and identify vehicles
-        self.__identify_vehicles(labels)
+            # Itearate through labels and identify vehicles
+            self.__identify_vehicles(labels)
+
+            #Debug overlay the search windows
+            img = cv2.addWeighted(img, 1, window_img, 0.8, 0)
 
         # Draw each of the tracked vehicles
         for car in self.tracked_cars:
@@ -185,6 +187,9 @@ class VehicleDetection:
 
         # Debug - Draw the raw label output
         #draw_img = draw_labeled_bboxes(raw_image, labels)
+
+
+
 
         return img
 

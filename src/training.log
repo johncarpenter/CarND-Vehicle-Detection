@@ -1,0 +1,24 @@
+Training...
+Color Space HLS
+Spatial Bin Size (16, 16)
+Histogram Bins 16
+Orientations 9
+Px per Cell 16
+Cell per Block 2
+HOG Channel ALL
+Use Spatial Features True
+Use Histogram Features True
+Use HOG Features True
+Training with 8792 Car features
+Training with 8968 Non-Car features
+Using: 9 orientations 16 pixels per cell and 2 cells per block
+Feature vector length: 1788
+4.85 Seconds to train SVC...
+Test Accuracy of SVC =  0.9904
+Training finished
+gray
+gray
+gray
+gray
+gray
+gray

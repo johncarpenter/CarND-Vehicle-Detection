@@ -30,7 +30,9 @@ The first step in the project is to create a classifier model to be able to iden
 
 ####Training images####
 Provided are two sample images from the training set
+
 [Car training image](output_images/training_car_sample.jpg)
+
 [Not Car training image](output_images/training_non_car_sample.jpg)
 
 After a number of iterations we arrived at a feature set that was made up of *HOG features + Spatial Binning + Color Histogram* Below is a section from the ```training.log``` file that was used in the model generation
@@ -93,43 +95,79 @@ Once the model was validated it was saved to ```vehicle_detection.p``` pickle fi
 
 Once the classifier was completed, the next step was to search the image for potential matches from the classifier. This was accomplished by creating sliding a test window across the image. Different window scales were required to handle different sized vehicles in the image. And so we repeated the search with a variety of window sizes.
 
-![Sliding Windows](output_images/training_car_sample.jpg)
+![Sliding Windows](output_images/search_windows.jpg)
 Shows the windows that were used within the image
 
 The sliding windows proved to be the largest performance drain on the application so the processes to choosing the number of sliding windows was based on trying to minimize the search to as few windows as possible. The following steps were taken;
+
 1. Minimize the search to just the area on the road. As seen in the image above
 2. Maintain a historical record of the previous N iterations and use that to supplement the search in the current windows
 3. Keep the number of different sizes to a minimum (2)
 
+We eventually decided on two window sizes (52,52) and (110,110) each with a 50% overlap. This caused a number of false positives which we then used post-processing to remove them.
 
+```python VehicleDetection.py
+hot_windows += self.__search(img,SearchConfig(x_start_stop=x_start_stop,y_start_stop=y_start_stop, xy_window=(52,52),xy_overlap=(0.5,0.5)))
+  hot_windows += self.__search(img,SearchConfig(x_start_stop=x_start_stop,y_start_stop=y_start_stop, xy_window=(110,110),xy_overlap=(0.5,0.5)))
 
+```
 
+####Heatmap Thresholding####
 
+As each sliding window registered a hit with the classifier, it was added into a list of successes. Those list of successes were overlaid onto a heatmap. Those pixel values that exceeded a threshold were considered a successful vehicle detection. Test images are shown below;
 
-Creating a great writeup:
----
-A great writeup should include the rubric points as well as your description of how you addressed each point.  You should include a detailed description of the code used in each step (with line-number references and code snippets where necessary), and links to other supporting documents or external references.  You should include images in your writeup to demonstrate how your code works with examples.  
+![Window Results](output_images/windows_test.jpg)
 
-All that said, please be concise!  We're not looking for you to write a book here, just a brief description of how you passed each rubric point, and references to the relevant code :).
+*Note:The images above show a high amount of false-positive results. The decision was made to handle these post-processing. Testing with the thresholds and window sizes showed we could remove the false-positives but that occasionally failed to track vehicles. It was more important to register false-positives than miss identify vehicles. Post-processing doesn't operate in single image mode*
 
-You can submit your writeup in markdown or use another method and submit a pdf instead.
+####Post-Processing####
 
-The Project
----
+The biggest improvement in the detection came from aggregating information across multiple scenes. This allowed us to effectively remove most of the outliers and track the vehicles instead of vehicle detections. Only two simple systems were used.
 
-The goals / steps of this project are the following:
+1. Aggregate heatmaps across 12 frames. By storing the results from the heatmaps across 12 frames and increasing the threshold we are filtering out any false-positives that are short lived. Typically this was from shadows or colour changes on the road surface. The code for handling that averaging is shown below.
 
-* Perform a Histogram of Oriented Gradients (HOG) feature extraction on a labeled training set of images and train a classifier Linear SVM classifier
-* Optionally, you can also apply a color transform and append binned color features, as well as histograms of color, to your HOG feature vector.
-* Note: for those first two steps don't forget to normalize your features and randomize a selection for training and testing.
-* Implement a sliding-window technique and use your trained classifier to search for vehicles in images.
-* Run your pipeline on a video stream (start with the test_video.mp4 and later implement on full project_video.mp4) and create a heat map of recurring detections frame by frame to reject outliers and follow detected vehicles.
-* Estimate a bounding box for vehicles detected.
+```python
 
-Here are links to the labeled data for [vehicle](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/vehicles.zip) and [non-vehicle](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/non-vehicles.zip) examples to train your classifier.  These example images come from a combination of the [GTI vehicle image database](http://www.gti.ssr.upm.es/data/Vehicle_database.html), the [KITTI vision benchmark suite](http://www.cvlibs.net/datasets/kitti/), and examples extracted from the project video itself.   You are welcome and encouraged to take advantage of the recently released [Udacity labeled dataset](https://github.com/udacity/self-driving-car/tree/master/annotations) to augment your training data.  
+    # Keep a running record for the last 500ms
+    self.prev_hot_windows.append(hot_windows);
+    if(len(self.prev_hot_windows) >= 12):
+        self.prev_hot_windows.pop(0)
 
-Some example images for testing your pipeline on single frames are located in the `test_images` folder.  To help the reviewer examine your work, please save examples of the output from each stage of your pipeline in the folder called `ouput_images`, and include them in your writeup for the project by describing what each image shows.    The video called `project_video.mp4` is the video your pipeline should work well on.  
+    # Append all the information from the last 12 frames into one estimator
+    hot_windows = []
+    for hw in self.prev_hot_windows:
+        hot_windows += hw
 
-**As an optional challenge** Once you have a working pipeline for vehicle detection, add in your lane-finding algorithm from the last project to do simultaneous lane-finding and vehicle detection!
+    #Create heatmap style image from overlaid windows.
+    thresh = int(len(self.prev_hot_windows)*0.75)  #Threshold is based upon size of historical data
+    heatmap = filter_by_heatmap(img, hot_windows,thresh=thresh)
 
-**If you're feeling ambitious** (also totally optional though), don't stop there!  We encourage you to go out and take video of your own, and show us how you would implement this project on a new video!
+```
+
+2. Move from tracking hits to tracking vehicles. We created a class ```CarBlob``` to act as a container for a potential car hits and tracked that between epochs. From this we could also minimize the variance in the window sizes by apply a simple dampening filter over each update. The effect was a smoother window track but likely this class will be important part of improving the performance.
+
+You can see the effect of the processing in this image. Blue boxes are the original hits, and green boxes are where the post-processing is performed
+
+![Filtering](output_images/test.gif)
+
+###Discussions####
+
+The project was successfully able to track the vehicles within the provided video and test images using the algorithms mentioned above. There were a couple of false-positives, the video
+
+####Potential Issues####
+
+1. Training of the classifier used a subset (for the purposes of the course, likely optimized) of training data provided to work with the video. This could have created an overly optimistic classifier which was tuned to work with the project video
+
+2. Small video set. The project was tuned to work with the project video and the configurations were based upon the values that worked for this video set.
+
+3. Does not operate in real-time. See performance below
+
+####Performance#####
+
+The vehicle detection algorithm still lags behind being able to operate in real-time. Based on 2.7 GHz Intel Core i5 8GB Macbook, the algorithm could only maintain a 1.04 seconds / frame (s/it) processing time. About 20 times slower than required. A couple of solutions may be able to solve this;
+
+1. Reduce the sampling rate. This had a direct improvement on the processing speed although it was not able to register vehicle changes very quickly. Even a change of every 2nd/3rd frame showed a linear improvement in speed. Adding vehicle dynamics and predictions would improve this.
+
+2. Adaptive window searches. Since we are tracking the vehicles we can focus search in their predicted locations, and minimize the global searches.
+
+3. There was some effort to remove background information with ```cv2.createBackgroundSubtractorMOG2```. I suspect if we can remove those parts of the image that are not changing rapidly overtime we can identify moving vehicles. Of course this wouldn't work for stopped or parked vehicles but it may be part of a larger search routine

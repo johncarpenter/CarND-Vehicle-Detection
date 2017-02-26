@@ -22,6 +22,7 @@ class MultipleDetector:
         '''
         self.lane_detector = lane_detector
         self.vehicle_detector = vehicle_detection
+        self.frame_count = 0
 
     def process_image(self,img):
         '''
@@ -30,11 +31,14 @@ class MultipleDetector:
         Parameters:
         img PIL format image
         '''
+        self.frame_count += 1
+
+
         if self.lane_detector:
             img = self.lane_detector.process_image(img)
 
         if self.vehicle_detector:
-            img = self.vehicle_detector.process_image(img)
+            img = self.vehicle_detector.process_image(img, full_search=self.frame_count % 1 == 0)
         return img
 
 def process_video(infile,outfile, camera=None, vehicle=None):
@@ -52,7 +56,7 @@ def process_video(infile,outfile, camera=None, vehicle=None):
 
     lane_detector = LaneDetector(use_smoothing = True, camera = camera)
 
-    multiple_detector = MultipleDetector(lane_detector=lane_detector, vehicle_detection=vehicle_detection)
+    multiple_detector = MultipleDetector(vehicle_detection=vehicle_detection)
 
     clip = VideoFileClip(infile)
 
